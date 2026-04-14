@@ -3,10 +3,13 @@ import dotenv from "dotenv";
 import path from "path";
 import expressLayout from "express-ejs-layouts";
 import homeRoutes from "./server/routes/homeRoutes";
+import { connectDB } from "./server/config/db";
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+connectDB();
 
 app.use(express.static("public"));
 // Templating Engine
