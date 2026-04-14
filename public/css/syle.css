@@ -305,9 +305,18 @@ textarea:focus {
   border-bottom: 1px solid var(--border);
   padding: 14px 0;
   backdrop-filter: blur(10px);
-  position: sticky;
+
+  position: fixed;      
   top: 0;
-  z-index: 100;
+  left: 0;
+  width: 100%;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-20px);
+
+  transition: all 0.3s ease;
+  z-index: 1000;
 }
 
 .search__form {
@@ -373,7 +382,11 @@ textarea:focus {
   border-color: var(--accent);
   background: rgba(167, 139, 250, 0.08);
 }
-
+.searchBar.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
 /* Pagination */
 .pagination {
   color: var(--text-muted);

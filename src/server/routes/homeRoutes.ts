@@ -1,94 +1,107 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { deserialize } from "v8";
 const router = express.Router();
 import { Post } from "../models/post";
 //Routes
 
-router.get('', async (req, res) => {
+router.get("", async (req: Request, res: Response) => {
   try {
     const locals = {
       title: "NodeJs Blog",
-      description: "Simple Blog created with NodeJs, Express & MongoDb."
+      description: "Simple Blog created with NodeJs, Express & MongoDb.",
+    };
+
+    let perPage: number = 10;
+
+    let page: number = 1;
+    if (typeof req.query.page === "string") {
+      const parsed = parseInt(req.query.page);
+      page = parsed > 0 ? parsed : 1;
     }
 
-    let perPage = 10;
-    let page = parseInt(req.query.page as string) || 1;
+    const data = await Post.aggregate([{ $sort: { createdAt: -1 } }])
+      .skip(perPage * (page - 1))
+      .limit(perPage)
+      .exec();
 
-    const data = await Post.aggregate([ { $sort: { createdAt: -1 } } ])
-    .skip(perPage * page - perPage)
-    .limit(perPage)
-    .exec();
+    const count: number = await Post.countDocuments({});
+    const nextPage: number = page + 1;
+    const hasNextPage: boolean = nextPage <= Math.ceil(count / perPage);
 
-    // Count is deprecated - please use countDocuments
-    // const count = await Post.count();
-    const count = await Post.countDocuments({});
-    const nextPage = page + 1;
-    const hasNextPage = nextPage <= Math.ceil(count / perPage);
-
-    res.render('index', { 
+    res.render("index", {
       locals,
       data,
       current: page,
       nextPage: hasNextPage ? nextPage : null,
-      currentRoute: '/'
+      currentRoute: "/",
     });
-
-  } catch (error) {
+  } catch (error: unknown) {
     console.log(error);
+    res.status(500).send("Server Error");
   }
-
 });
 
+router.get("/post/:id", async (req: Request<{ id: string }>, res: Response) => {
+  try {
+    let slug: string = req.params.id;
 
-// function insertPostData (){
-//      Post.insertMany([
-//       {
-//         title: "Building APIs with Node.js",
-//         body: "Learn how to use Node.js to build RESTful APIs using frameworks like Express.js."
-//       },
-//       {
-//         title: "Deployment of Node.js applications",
-//         body: "Understand the different ways to deploy your Node.js applications, including on-premises, cloud, and container environments."
-//       },
-//       {
-//         title: "Authentication and Authorization in Node.js",
-//         body: "Learn how to add authentication and authorization to your Node.js web applications using Passport.js or other authentication libraries."
-//       },
-//       {
-//         title: "Understand how to work with MongoDB and Mongoose",
-//         body: "Understand how to work with MongoDB and Mongoose, an Object Data Modeling (ODM) library, in Node.js applications."
-//       },
-//       {
-//         title: "Build real-time, event-driven applications in Node.js",
-//         body: "Learn how to use Socket.io to build real-time, event-driven applications in Node.js."
-//       },
-//       {
-//         title: "Discover how to use Express.js",
-//         body: "Discover how to use Express.js, a popular Node.js web framework, to build scalable web applications."
-//       },
-//       {
-//         title: "Asynchronous Programming with Node.js",
-//         body: "Explore the asynchronous nature of Node.js and how it allows for non-blocking I/O operations."
-//       },
-//       {
-//         title: "Learn the basics of Node.js and its architecture",
-//         body: "Understand how Node.js works internally and why it is widely used in backend development."
-//       },
-//       {
-//         title: "Node.js Limiting Network Traffic",
-//         body: "Learn techniques to limit and control network traffic in Node.js applications."
-//       },
-//       {
-//         title: "Learn Morgan - HTTP Request Logger",
-//         body: "Learn how to use Morgan middleware to log HTTP requests in your Node.js applications."
-//       }
-//     ]);
+    const data = await Post.findById({ _id: slug });
 
-//     console.log("✅ Posts seeded successfully");
-//   } 
-// insertPostData(); 
+    if (!data) {
+      return res.status(404).send("Post not found");
+    }
 
-router.get("/about", (req, res) => {
+    const locals = {
+      title: data.title,
+      description: "Simple Blog created with NodeJs, Express & MongoDb.",
+    };
+
+    res.render("post", {
+      locals,
+      data,
+      currentRoute: `/post/${slug}`,
+    });
+  } catch (error: unknown) {
+    console.log(error);
+    res.status(500).send("Server Error");
+  }
+});
+
+router.post("/search", async (req: Request, res: Response) => {
+  try {
+    const locals = {
+      title: "Seach",
+      description: "Simple Blog created with NodeJs, Express & MongoDb.",
+    };
+
+    let searchTerm: string = req.body.searchTerm || "";
+
+    const searchNoSpecialChar: string = searchTerm.replace(
+      /[^a-zA-Z0-9 ]/g,
+      "",
+    );
+
+    const data = await Post.find({
+      $or: [
+        { title: { $regex: new RegExp(searchNoSpecialChar, "i") } },
+        { body: { $regex: new RegExp(searchNoSpecialChar, "i") } },
+      ],
+    });
+
+    res.render("search", {
+      data,
+      locals,
+      currentRoute: "/",
+    });
+    console.log("searchTerm:", searchTerm);
+    console.log("data:", data);
+  } catch (error: unknown) {
+    console.log(error);
+    res.status(500).send("Server Error");
+  }
+});
+
+router.get("/about", (req: Request, res: Response) => {
   res.render("about");
 });
 
