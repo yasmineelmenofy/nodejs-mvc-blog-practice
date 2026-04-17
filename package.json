@@ -33,8 +33,12 @@
     "mongoose": "^9.4.1"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/express-ejs-layouts": "^2.5.4",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/method-override": "^3.0.0",
     "@types/node": "^25.5.2",
     "nodemon": "^3.1.14",
     "ts-node-dev": "^2.0.0",
