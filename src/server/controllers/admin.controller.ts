@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { Post } from "../models/post";
 import { User } from "../models/user";
 import { ApiError } from "../utils/apiErrors";
+import { AuthRequest } from "../middleware/auth.middleware";
 
 const adminLayout = "../views/layouts/admin";
 const jwtSecret = process.env.JWT_SECRET as string;
@@ -57,7 +58,7 @@ export const loginAdmin = async (
 };
 
 export const getDashboard = async (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -80,7 +81,7 @@ export const getDashboard = async (
 };
 
 export const getAddPost = async (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -100,17 +101,16 @@ export const getAddPost = async (
 };
 
 export const createPost = async (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const newPost = new Post({
+    await Post.create({
       title: req.body.title,
       body: req.body.body,
     });
 
-    await Post.create(newPost);
     res.redirect("/dashboard");
   } catch (err) {
     next(err);
@@ -118,7 +118,7 @@ export const createPost = async (
 };
 
 export const getEditPost = async (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -142,7 +142,7 @@ export const getEditPost = async (
 };
 
 export const updatePost = async (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {
@@ -165,7 +165,11 @@ export const register = async (
   next: NextFunction,
 ) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, adminSecret } = req.body;
+
+    if (adminSecret !== process.env.ADMIN_SECRET) {
+      return next(new ApiError(403, "Forbidden"));
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -184,7 +188,7 @@ export const register = async (
 };
 
 export const deletePost = async (
-  req: any,
+  req: AuthRequest,
   res: Response,
   next: NextFunction,
 ) => {

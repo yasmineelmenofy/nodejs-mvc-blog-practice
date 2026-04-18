@@ -13,6 +13,8 @@ import {
 } from "../controllers/admin.controller";
 
 import { authMiddleware } from "../middleware/auth.middleware";
+import { validate } from "../middleware/validate.middleware";
+import { createPostSchema, updatePostSchema } from "../schemas/post.schema";
 
 const router = express.Router();
 
@@ -22,10 +24,20 @@ router.post("/admin", loginAdmin);
 router.get("/dashboard", authMiddleware, getDashboard);
 
 router.get("/add-post", authMiddleware, getAddPost);
-router.post("/add-post", authMiddleware, createPost);
+router.post(
+  "/add-post",
+  authMiddleware,
+  validate(createPostSchema),
+  createPost,
+);
 
 router.get("/edit-post/:id", authMiddleware, getEditPost);
-router.put("/edit-post/:id", authMiddleware, updatePost);
+router.put(
+  "/edit-post/:id",
+  authMiddleware,
+  validate(updatePostSchema),
+  updatePost,
+);
 
 router.delete("/delete-post/:id", authMiddleware, deletePost);
 
